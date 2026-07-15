@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOBBIE Trading Academy — Demo Trading Floor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --navy:#0B1F3A;
+    --navy-panel:#122a4d;
+    --navy-panel-2:#0e2544;
+    --gold:#F5C518;
+    --mint:#1FB88F;
+    --neon:#39FF14;
+    --loss:#FF4D5E;
+    --ink:#E8ECF1;
+    --ink-dim:#8fa2bd;
+    --line:#1d3661;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--navy);color:var(--ink);font-family:var(--body);height:100%;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+  .app{display:flex;flex-direction:column;min-height:100vh;}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0d2244,#0B1F3A);}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-badge{width:34px;height:34px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;color:var(--navy);font-size:15px;}
+  .brand-text{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:0.2px;}
+  .brand-sub{font-size:11px;color:var(--ink-dim);font-family:var(--mono);letter-spacing:0.5px;text-transform:uppercase;}
+  .sim-flag{font-family:var(--mono);font-size:11px;color:var(--navy);background:var(--gold);padding:4px 10px;border-radius:100px;font-weight:600;letter-spacing:0.4px;}
+  .clock{font-family:var(--mono);color:var(--ink-dim);font-size:12px;}
+
+  /* ---------- TICKER TAPE (signature element) ---------- */
+  .ticker-wrap{overflow:hidden;background:#081729;border-bottom:1px solid var(--line);white-space:nowrap;position:relative;}
+  .ticker-track{display:inline-flex;gap:34px;padding:9px 0;animation:scroll 32s linear infinite;}
+  .ticker-wrap:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .tick-item{font-family:var(--mono);font-size:12.5px;display:inline-flex;gap:8px;align-items:center;color:var(--ink-dim);}
+  .tick-sym{color:var(--ink);font-weight:600;}
+  .tick-up{color:var(--mint);}
+  .tick-down{color:var(--loss);}
+
+  /* ---------- LAYOUT ---------- */
+  .main{display:flex;flex:1;min-height:0;}
+  .col{display:flex;flex-direction:column;}
+  .sidebar{width:230px;border-right:1px solid var(--line);padding:14px;overflow-y:auto;background:var(--navy-panel-2);}
+  .center{flex:1;display:flex;flex-direction:column;min-width:0;padding:14px 14px 8px;overflow-y:auto;}
+  .rightbar{width:300px;border-left:1px solid var(--line);padding:14px;overflow-y:auto;background:var(--navy-panel-2);}
+
+  .section-label{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);margin:14px 0 8px;}
+  .section-label:first-child{margin-top:0;}
+
+  /* instrument list */
+  .cat-toggle{display:flex;gap:6px;margin-bottom:10px;}
+  .cat-btn{flex:1;padding:6px 4px;font-family:var(--mono);font-size:10.5px;text-align:center;border:1px solid var(--line);border-radius:6px;color:var(--ink-dim);cursor:pointer;background:transparent;letter-spacing:0.3px;}
+  .cat-btn.active{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+  .instrument{padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;}
+  .instrument:hover{background:var(--navy-panel);}
+  .instrument.active{background:var(--navy-panel);border-color:var(--gold);}
+  .inst-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .inst-sym{font-family:var(--mono);font-weight:600;font-size:13px;}
+  .inst-price{font-family:var(--mono);font-size:12.5px;}
+  .inst-name{font-size:10.5px;color:var(--ink-dim);margin-top:1px;}
+
+  /* account panel */
+  .acct-card{background:var(--navy-panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .acct-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;}
+  .acct-row .lbl{color:var(--ink-dim);}
+  .acct-row .val{font-family:var(--mono);font-weight:600;}
+  .acct-divider{border-top:1px solid var(--line);margin:6px 0;}
+  .margin-bar-track{height:6px;background:#08172c;border-radius:3px;overflow:hidden;margin-top:6px;}
+  .margin-bar-fill{height:100%;border-radius:3px;transition:width .3s;}
+  .warn-banner{background:rgba(255,77,94,0.12);border:1px solid var(--loss);color:var(--loss);font-size:11.5px;padding:8px 10px;border-radius:8px;margin-bottom:10px;font-family:var(--mono);line-height:1.5;}
+  .reset-btn{width:100%;padding:8px;background:transparent;border:1px solid var(--line);color:var(--ink-dim);border-radius:8px;font-family:var(--mono);font-size:11px;cursor:pointer;}
+  .reset-btn:hover{border-color:var(--ink-dim);color:var(--ink);}
+
+  /* center chart header */
+  .chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+  .chart-title{font-family:var(--display);font-weight:700;font-size:20px;}
+  .chart-price{font-family:var(--mono);font-size:22px;font-weight:600;}
+  .chart-change{font-family:var(--mono);font-size:12.5px;}
+  .speed-ctrl{display:flex;gap:4px;align-items:center;}
+  .speed-btn{padding:5px 9px;font-family:var(--mono);font-size:11px;border:1px solid var(--line);background:transparent;color:var(--ink-dim);border-radius:6px;cursor:pointer;}
+  .speed-btn.active{background:var(--mint);border-color:var(--mint);color:var(--navy);font-weight:600;}
+
+  .indicator-toggles{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;}
+  .ind-chip{display:flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid var(--line);border-radius:100px;font-family:var(--mono);font-size:11px;cursor:pointer;color:var(--ink-dim);user-select:none;}
+  .ind-chip.on{color:var(--navy);font-weight:600;}
+  .ind-chip .dot{width:7px;height:7px;border-radius:50%;}
+  .ind-chip .qmark{width:14px;height:14px;border-radius:50%;background:var(--line);color:var(--ink);font-size:9.5px;display:flex;align-items:center;justify-content:center;font-family:var(--body);margin-left:2px;}
+  .ind-chip .qmark:hover{background:var(--gold);color:var(--navy);}
+
+  canvas{display:block;width:100%;}
+  .chart-pane{background:var(--navy-panel-2);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;padding:8px 8px 4px;}
+  .pane-label{font-family:var(--mono);font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:0.5px;padding:0 4px 4px;}
+
+  .explainer{background:var(--navy-panel);border:1px solid var(--gold);border-radius:10px;padding:12px 14px;margin-top:6px;font-size:12.5px;line-height:1.55;display:none;}
+  .explainer.show{display:block;}
+  .explainer h4{margin:0 0 6px;font-family:var(--display);font-size:13px;color:var(--gold);}
+
+  /* order ticket */
+  .market-mode{display:flex;gap:6px;margin-bottom:12px;}
+  .mode-btn{flex:1;padding:8px;font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink-dim);cursor:pointer;text-align:center;line-height:1.3;}
+  .mode-btn.active{border-color:var(--mint);color:var(--mint);background:rgba(31,184,143,0.1);}
+
+  .field{margin-bottom:10px;}
+  .field label{display:block;font-size:11px;color:var(--ink-dim);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.4px;}
+  .field select, .field input{width:100%;padding:8px;background:#08172c;border:1px solid var(--line);color:var(--ink);border-radius:7px;font-family:var(--mono);font-size:13px;}
+  .field select:focus, .field input:focus{outline:none;border-color:var(--gold);}
+
+  .side-toggle{display:flex;gap:6px;}
+  .side-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--line);background:transparent;font-family:var(--mono);font-weight:600;font-size:12.5px;cursor:pointer;color:var(--ink-dim);}
+  .side-btn.buy.active{background:var(--mint);color:var(--navy);border-color:var(--mint);}
+  .side-btn.sell.active{background:var(--loss);color:#1a0508;border-color:var(--loss);}
+
+  .margin-calc{background:#08172c;border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0;font-family:var(--mono);font-size:11.5px;}
+  .margin-calc .row{display:flex;justify-content:space-between;padding:2px 0;color:var(--ink-dim);}
+  .margin-calc .row b{color:var(--ink);font-weight:600;}
+  .margin-calc .row.total{border-top:1px solid var(--line);margin-top:4px;padding-top:5px;color:var(--gold);}
+  .margin-calc .row.total b{color:var(--gold);}
+
+  .submit-btn{width:100%;padding:11px;border:none;border-radius:8px;font-family:var(--display);font-weight:700;font-size:13px;cursor:pointer;letter-spacing:0.2px;}
+  .submit-btn.buy{background:var(--mint);color:var(--navy);}
+  .submit-btn.sell{background:var(--loss);color:#1a0508;}
+  .submit-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .msg{font-size:11px;font-family:var(--mono);margin-top:8px;padding:7px 9px;border-radius:6px;}
+  .msg.err{background:rgba(255,77,94,0.12);color:var(--loss);}
+  .msg.ok{background:rgba(31,184,143,0.12);color:var(--mint);}
+
+  .positions{margin-top:4px;}
+  .pos-card{background:var(--navy-panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:7px;font-size:11.5px;}
+  .pos-top{display:flex;justify-content:space-between;font-family:var(--mono);font-weight:600;}
+  .pos-mid{display:flex;justify-content:space-between;color:var(--ink-dim);font-family:var(--mono);font-size:11px;margin-top:3px;}
+  .pos-pl{font-family:var(--mono);font-weight:600;}
+  .close-btn{width:100%;margin-top:6px;padding:5px;background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--ink-dim);font-family:var(--mono);font-size:10.5px;cursor:pointer;}
+  .close-btn:hover{border-color:var(--loss);color:var(--loss);}
+  .empty-pos{color:var(--ink-dim);font-size:11.5px;font-family:var(--mono);text-align:center;padding:16px 0;}
+
+  @media (max-width:980px){
+    .main{flex-direction:column;}
+    .sidebar,.rightbar{width:100%;border:none;border-bottom:1px solid var(--line);max-height:260px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">B</div>
+      <div>
+        <div class="brand-text">BOBBIE Trading Academy</div>
+        <div class="brand-sub">Chart Academy · Demo Trading Floor</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span class="clock" id="clock"></span>
+      <span class="sim-flag">SIMULATED DATA — EDUCATIONAL USE ONLY</span>
+    </div>
+  </div>
+
+  <div class="ticker-wrap"><div class="ticker-track" id="tickerTrack"></div></div>
+
+  <div class="main">
+
+    <!-- SIDEBAR: instruments -->
+    <div class="sidebar col">
+      <div class="section-label">Market</div>
+      <div class="cat-toggle">
+        <button class="cat-btn active" data-cat="forex">FX</button>
+        <button class="cat-btn" data-cat="stock">Stocks</button>
+        <button class="cat-btn" data-cat="futures">Futures</button>
+      </div>
+      <div id="instrumentList"></div>
+    </div>
+
+    <!-- CENTER: chart -->
+    <div class="center col">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="chartTitle">EUR/USD</div>
+          <div><span class="chart-price" id="chartPrice">-</span> <span class="chart-change" id="chartChange"></span></div>
+        </div>
+        <div class="speed-ctrl">
+          <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);margin-right:4px;">SPEED</span>
+          <button class="speed-btn" data-speed="1">1x</button>
+          <button class="speed-btn active" data-speed="5">5x</button>
+          <button class="speed-btn" data-speed="20">20x</button>
+        </div>
+      </div>
+
+      <div class="indicator-toggles" id="indicatorToggles"></div>
+
+      <div class="chart-pane">
+        <canvas id="mainChart" height="330"></canvas>
+      </div>
+      <div class="chart-pane" id="rsiPane">
+        <div class="pane-label">RSI (14)</div>
+        <canvas id="rsiChart" height="90"></canvas>
+      </div>
+      <div class="chart-pane" id="macdPane">
+        <div class="pane-label">MACD (12, 26, 9)</div>
+        <canvas id="macdChart" height="90"></canvas>
+      </div>
+
+      <div class="explainer" id="explainerBox">
+        <h4 id="explainerTitle"></h4>
+        <div id="explainerBody"></div>
+      </div>
+    </div>
+
+    <!-- RIGHTBAR: order ticket + positions + account -->
+    <div class="rightbar col">
+      <div id="warnSlot"></div>
+
+      <div class="section-label">Account</div>
+      <div class="acct-card">
+        <div class="acct-row"><span class="lbl">Equity</span><span class="val" id="acctEquity">$10,000.00</span></div>
+        <div class="acct-row"><span class="lbl">Cash Balance</span><span class="val" id="acctBalance">$10,000.00</span></div>
+        <div class="acct-row"><span class="lbl">Used Margin</span><span class="val" id="acctUsedMargin">$0.00</span></div>
+        <div class="acct-row"><span class="lbl">Free Margin</span><span class="val" id="acctFreeMargin">$10,000.00</span></div>
+        <div class="acct-divider"></div>
+        <div class="acct-row"><span class="lbl">Margin Level</span><span class="val" id="acctMarginLevel">—</span></div>
+        <div class="margin-bar-track"><div class="margin-bar-fill" id="marginBarFill" style="width:0%;background:var(--mint);"></div></div>
+        <div class="acct-divider"></div>
+        <button class="reset-btn" id="resetBtn">Reset paper account</button>
+      </div>
+
+      <div class="section-label">Place order</div>
+      <div class="market-mode" id="marketMode">
+        <button class="mode-btn active" data-mode="forex">FOREX<br>Leverage</button>
+        <button class="mode-btn" data-mode="stock">STOCKS<br>Buying power</button>
+        <button class="mode-btn" data-mode="futures">FUTURES<br>Fixed margin</button>
+      </div>
+
+      <div class="field" id="sizeField">
+        <label id="sizeLabel">Size (lots)</label>
+        <input type="number" id="sizeInput" value="0.10" step="0.01" min="0.01">
+      </div>
+
+      <div class="field" id="leverageField">
+        <label>Leverage</label>
+        <select id="leverageSelect">
+          <option value="10">10:1</option>
+          <option value="20" selected>20:1</option>
+          <option value="30">30:1</option>
+          <option value="50">50:1</option>
+        </select>
+      </div>
+
+      <div class="field" id="marginPctField" style="display:none;">
+        <label>Margin requirement</label>
+        <select id="marginPctSelect">
+          <option value="1">100% (cash)</option>
+          <option value="0.5" selected>50% (Reg T initial)</option>
+          <option value="0.25">25% (maintenance)</option>
+        </select>
+      </div>
+
+      <div class="side-toggle">
+        <button class="side-btn buy active" id="buyBtn">BUY / LONG</button>
+        <button class="side-btn sell" id="sellBtn">SELL / SHORT</button>
+      </div>
+
+      <div class="margin-calc" id="marginCalc"></div>
+
+      <button class="submit-btn buy" id="submitOrder">Open position</button>
+      <div id="orderMsg"></div>
+
+      <div class="section-label">Open positions</div>
+      <div class="positions" id="positionsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   1. INSTRUMENT CONFIG
+========================================================= */
+const INSTRUMENTS = [
+  // FOREX — quoted price ~ USD per unit (simplified), contractSize = units per lot
+  {sym:'EUR/USD', name:'Euro / US Dollar', cat:'forex', base:1.0850, vol:0.0009, decimals:4, contractSize:100000},
+  {sym:'GBP/USD', name:'British Pound / US Dollar', cat:'forex', base:1.2680, vol:0.0011, decimals:4, contractSize:100000},
+  {sym:'USD/JPY', name:'US Dollar / Japanese Yen', cat:'forex', base:151.20, vol:0.14, decimals:2, contractSize:100000, jpy:true},
+  {sym:'AUD/USD', name:'Australian Dollar / US Dollar', cat:'forex', base:0.6520, vol:0.0008, decimals:4, contractSize:100000},
+
+  // STOCKS — simulated prices, not live quotes
+  {sym:'AAPL', name:'Apple Inc. (simulated)', cat:'stock', base:212.40, vol:1.6, decimals:2, contractSize:1},
+  {sym:'TSLA', name:'Tesla Inc. (simulated)', cat:'stock', base:248.90, vol:4.2, decimals:2, contractSize:1},
+  {sym:'NVDA', name:'NVIDIA Corp. (simulated)', cat:'stock', base:171.30, vol:3.1, decimals:2, contractSize:1},
+  {sym:'MSFT', name:'Microsoft Corp. (simulated)', cat:'stock', base:452.10, vol:2.4, decimals:2, contractSize:1},
+
+  // FUTURES — simplified demo margins & point multipliers, not real exchange values
+  {sym:'/ES', name:'E-mini S&P 500 (demo)', cat:'futures', base:5620.0, vol:5.5, decimals:2, contractSize:1, multiplier:50, demoMargin:500},
+  {sym:'/CL', name:'Crude Oil (demo)', cat:'futures', base:68.40, vol:0.55, decimals:2, contractSize:1, multiplier:1000, demoMargin:600},
+  {sym:'/GC', name:'Gold (demo)', cat:'futures', base:2412.0, vol:6.5, decimals:2, contractSize:1, multiplier:100, demoMargin:700},
+];
+
+const INDICATOR_DEFS = [
+  {key:'sma', label:'SMA 20', color:'#F5C518', title:'Simple Moving Average (20)',
+   body:'The average closing price over the last 20 candles. It smooths out noise so you can see the underlying trend. Price above the SMA generally reflects an uptrend; price below reflects a downtrend. Because it weighs every candle equally, it reacts slower than an EMA.'},
+  {key:'ema', label:'EMA 50', color:'#39FF14', title:'Exponential Moving Average (50)',
+   body:'Like the SMA, but it weighs recent candles more heavily, so it reacts faster to new price action. Traders watch for price crossing the EMA, or a shorter EMA crossing a longer one, as a possible trend-change signal.'},
+  {key:'boll', label:'Bollinger Bands', color:'#8fa2bd', title:'Bollinger Bands (20, 2σ)',
+   body:'A middle band (the 20-period SMA) plus an upper and lower band set two standard deviations away. Bands widen when volatility rises and squeeze when it falls. Price tagging the upper band suggests it may be overextended to the upside; tagging the lower band suggests the same to the downside — though in a strong trend price can "ride the band" for a while.'},
+  {key:'sr', label:'Support / Resistance', color:'#FF4D5E', title:'Support & Resistance',
+   body:'Horizontal levels where price has repeatedly turned around. Support is a floor buyers have defended before; resistance is a ceiling sellers have defended before. These levels are found by scanning recent swing highs and lows — they are zones of interest, not guarantees.'},
+  {key:'rsi', label:'RSI', color:'#F5C518', title:'Relative Strength Index (14)',
+   body:'Measures how fast and how far price has moved recently, scaled 0–100. Above 70 is generally considered overbought (a pullback becomes more likely); below 30 is oversold (a bounce becomes more likely). RSI can stay extreme for a long time during a strong trend, so it works best combined with other tools.'},
+  {key:'macd', label:'MACD', color:'#1FB88F', title:'MACD (12, 26, 9)',
+   body:'The MACD line is the 12-period EMA minus the 26-period EMA — it tracks momentum. The signal line is a 9-period EMA of the MACD line. The histogram is the gap between them. A MACD line crossing above its signal line is often read as bullish momentum building; crossing below, bearish momentum building.'},
+  {key:'margin', label:'What is margin?', color:'#F5C518', title:'Margin & leverage, in plain terms',
+   body:"Margin is the cash a broker sets aside from your account to open a leveraged position — it is a good-faith deposit, not a fee. Leverage lets you control a larger position than your cash alone would allow (e.g. 20:1 means $1 of margin controls $20 of currency). This magnifies both gains AND losses. If losses erode your equity below the broker's margin level requirement, you get a margin call; if it falls further, positions get force-closed (\"stopped out\") to protect the broker from a negative balance. More leverage means a smaller adverse move can wipe out your account — it is a risk dial, not free money."},
+];
+
+/* =========================================================
+   2. STATE
+========================================================= */
+const state = {
+  cat: 'forex',
+  activeSymbol: 'EUR/USD',
+  candles: {},          // sym -> array of {t,o,h,l,c}
+  indicators: {sma:true, ema:false, boll:false, sr:true, rsi:true, macd:true},
+  speed: 5,
+  side: 'buy',
+  orderMode: 'forex',
+  account: {balance: 10000, positions: []},
+  tickCount: 0,
+};
+
+function fmt(n, d=2){ return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function money(n){ const neg = n<0; const v = '$'+fmt(Math.abs(n),2); return neg? '-'+v : v; }
+function priceDecimals(inst){ return inst.decimals; }
+
+/* =========================================================
+   3. PRICE SIMULATION
+========================================================= */
+function seedHistory(inst, count=140){
+  const arr = [];
+  let price = inst.base;
+  let t = Date.now() - count*60000;
+  for(let i=0;i<count;i++){
+    const o = price;
+    const drift = (Math.random()-0.5)*inst.vol*0.15;
+    const path = [];
+    let p = o;
+    for(let k=0;k<6;k++){ p += (Math.random()-0.5)*inst.vol*0.5 + drift/6; path.push(p); }
+    const c = path[path.length-1];
+    const h = Math.max(o,c,...path);
+    const l = Math.min(o,c,...path);
+    arr.push({t: t+i*60000, o, h, l, c});
+    price = c;
+  }
+  return arr;
+}
+
+function tickInstrument(inst){
+  const arr = state.candles[inst.sym];
+  const last = arr[arr.length-1];
+  const move = (Math.random()-0.5)*inst.vol*0.5 + (Math.random()-0.48)*inst.vol*0.05;
+  const newClose = last.c + move;
+  last.c = newClose;
+  last.h = Math.max(last.h, newClose);
+  last.l = Math.min(last.l, newClose);
+}
+
+function closeCandleAndOpenNew(inst){
+  const arr = state.candles[inst.sym];
+  const last = arr[arr.length-1];
+  arr.push({t: last.t+60000, o: last.c, h: last.c, l: last.c, c: last.c});
+  if(arr.length>160) arr.shift();
+}
+
+INSTRUMENTS.forEach(inst=> state.candles[inst.sym] = seedHistory(inst));
+
+/* =========================================================
+   4. INDICATOR MATH
+========================================================= */
+function sma(vals, period){
+  const out = new Array(vals.length).fill(null);
+  let sum=0;
+  for(let i=0;i<vals.length;i++){
+    sum += vals[i];
+    if(i>=period) sum -= vals[i-period];
+    if(i>=period-1) out[i] = sum/period;
+  }
+  return out;
+}
+function ema(vals, period){
+  const out = new Array(vals.length).fill(null);
+  const k = 2/(period+1);
+  let prev=null;
+  for(let i=0;i<vals.length;i++){
+    if(i===period-1){
+      const seed = vals.slice(0,period).reduce((a,b)=>a+b,0)/period;
+      out[i]=seed; prev=seed;
+    } else if(i>=period){
+      const v = vals[i]*k + prev*(1-k);
+      out[i]=v; prev=v;
+    }
+  }
+  return out;
+}
+function stddev(vals, period, meanArr){
+  const out = new Array(vals.length).fill(null);
+  for(let i=period-1;i<vals.length;i++){
+    const slice = vals.slice(i-period+1,i+1);
+    const m = meanArr[i];
+    if(m==null) continue;
+    const variance = slice.reduce((a,b)=>a+(b-m)*(b-m),0)/period;
+    out[i]=Math.sqrt(variance);
+  }
+  return out;
+}
+function rsi(vals, period=14){
+  const out = new Array(vals.length).fill(null);
+  let avgGain=0, avgLoss=0;
+  for(let i=1;i<vals.length;i++){
+    const diff = vals[i]-vals[i-1];
+    const gain = Math.max(diff,0), loss = Math.max(-diff,0);
+    if(i<=period){
+      avgGain += gain/period; avgLoss += loss/period;
+      if(i===period){ out[i] = 100 - 100/(1+ (avgLoss===0? 100 : avgGain/avgLoss)); }
+    } else {
+      avgGain = (avgGain*(period-1)+gain)/period;
+      avgLoss = (avgLoss*(period-1)+loss)/period;
+      const rs = avgLoss===0? 100 : avgGain/avgLoss;
+      out[i] = 100 - 100/(1+rs);
+    }
+  }
+  return out;
+}
+function macdCalc(vals){
+  const e12 = ema(vals,12), e26 = ema(vals,26);
+  const macdLine = vals.map((_,i)=> (e12[i]!=null && e26[i]!=null)? e12[i]-e26[i] : null);
+  const validStart = macdLine.findIndex(v=>v!=null);
+  const compact = macdLine.filter(v=>v!=null);
+  const sigCompact = ema(compact,9);
+  const signal = new Array(vals.length).fill(null);
+  for(let i=0;i<sigCompact.length;i++){ signal[validStart+i] = sigCompact[i]; }
+  const hist = vals.map((_,i)=> (macdLine[i]!=null && signal[i]!=null)? macdLine[i]-signal[i] : null);
+  return {macdLine, signal, hist};
+}
+function findPivots(candles, window=4){
+  const highs=[], lows=[];
+  for(let i=window;i<candles.length-window;i++){
+    const h = candles[i].h, l = candles[i].l;
+    let isHigh=true, isLow=true;
+    for(let k=i-window;k<=i+window;k++){
+      if(k===i) continue;
+      if(candles[k].h > h) isHigh=false;
+      if(candles[k].l < l) isLow=false;
+    }
+    if(isHigh) highs.push(h);
+    if(isLow) lows.push(l);
+  }
+  function cluster(levels, tolPct){
+    levels.sort((a,b)=>a-b);
+    const groups=[];
+    levels.forEach(lv=>{
+      const g = groups.find(g=> Math.abs(g.avg-lv)/lv < tolPct);
+      if(g){ g.vals.push(lv); g.avg = g.vals.reduce((a,b)=>a+b,0)/g.vals.length; }
+      else groups.push({avg:lv, vals:[lv]});
+    });
+    return groups.sort((a,b)=>b.vals.length-a.vals.length).slice(0,3).map(g=>g.avg);
+  }
+  return {resistance: cluster(highs,0.003), support: cluster(lows,0.003)};
+}
+
+/* =========================================================
+   5. RENDERING — main chart
+========================================================= */
+const mainCanvas = document.getElementById('mainChart');
+const rsiCanvas = document.getElementById('rsiChart');
+const macdCanvas = document.getElementById('macdChart');
+
+function resizeCanvas(cv, cssHeight){
+  const parentWidth = cv.parentElement.clientWidth - 16;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = parentWidth*dpr;
+  cv.height = cssHeight*dpr;
+  cv.style.height = cssHeight+'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, w:parentWidth, h:cssHeight};
+}
+
+function drawChart(){
+  const inst = INSTRUMENTS.find(i=>i.sym===state.activeSymbol);
+  const candles = state.candles[inst.sym];
+  const visible = candles.slice(-90);
+  const closes = candles.map(c=>c.c);
+
+  const smaArr = sma(closes,20);
+  const emaArr = ema(closes,50);
+  const smaBoll = sma(closes,20);
+  const sdArr = stddev(closes,20,smaBoll);
+  const rsiArr = rsi(closes,14);
+  const {macdLine, signal, hist} = macdCalc(closes);
+  const {support, resistance} = findPivots(candles.slice(-70));
+
+  const offset = candles.length - visible.length;
+
+  // ---- main price pane ----
+  const {ctx,w,h} = resizeCanvas(mainCanvas, 330);
+  ctx.clearRect(0,0,w,h);
+
+  const allVals = [];
+  visible.forEach((c,idx)=>{ allVals.push(c.h,c.l); });
+  if(state.indicators.boll){
+    for(let i=offset;i<candles.length;i++){ if(sdArr[i]!=null){ allVals.push(smaBoll[i]+2*sdArr[i], smaBoll[i]-2*sdArr[i]); } }
+  }
+  let maxV = Math.max(...allVals), minV = Math.min(...allVals);
+  const pad = (maxV-minV)*0.08 || maxV*0.001;
+  maxV += pad; minV -= pad;
+  const yScale = v => h - ( (v-minV)/(maxV-minV) )*h;
+  const slotW = w/visible.length;
+  const candleW = Math.max(2, slotW*0.6);
+
+  // gridlines
+  ctx.strokeStyle = 'rgba(143,162,189,0.12)';
+  ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){
+    const y = h/4*g;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    const val = maxV - (maxV-minV)*(g/4);
+    ctx.fillStyle='rgba(143,162,189,0.55)';
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.fillText(val.toFixed(inst.decimals), 4, y-3<10?12:y-3);
+  }
+
+  // support/resistance
+  if(state.indicators.sr){
+    ctx.setLineDash([5,4]);
+    resistance.forEach(lv=>{
+      ctx.strokeStyle='#FF4D5E'; ctx.beginPath(); ctx.moveTo(0,yScale(lv)); ctx.lineTo(w,yScale(lv)); ctx.stroke();
+    });
+    support.forEach(lv=>{
+      ctx.strokeStyle='#1FB88F'; ctx.beginPath(); ctx.moveTo(0,yScale(lv)); ctx.lineTo(w,yScale(lv)); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
+
+  // bollinger
+  if(state.indicators.boll){
+    drawLine(ctx, visible, offset, i=> smaBoll[i]+2*sdArr[i]!=null && sdArr[i]!=null ? smaBoll[i]+2*sdArr[i] : null, yScale, slotW, 'rgba(143,162,189,0.7)');
+    drawLine(ctx, visible, offset, i=> sdArr[i]!=null ? smaBoll[i]-2*sdArr[i] : null, yScale, slotW, 'rgba(143,162,189,0.7)');
+  }
+
+  // candles
+  visible.forEach((c,idx)=>{
+    const x = idx*slotW + slotW/2;
+    const up = c.c >= c.o;
+    ctx.strokeStyle = up? '#1FB88F' : '#FF4D5E';
+    ctx.fillStyle = up? '#1FB88F' : '#FF4D5E';
+    ctx.beginPath(); ctx.moveTo(x, yScale(c.h)); ctx.lineTo(x, yScale(c.l)); ctx.stroke();
+    const top = yScale(Math.max(c.o,c.c)), bot = yScale(Math.min(c.o,c.c));
+    ctx.fillRect(x-candleW/2, top, candleW, Math.max(1,bot-top));
+  });
+
+  // SMA / EMA overlays
+  if(state.indicators.sma){ drawLine(ctx, visible, offset, i=>smaArr[i], yScale, slotW, '#F5C518'); }
+  if(state.indicators.ema){ drawLine(ctx, visible, offset, i=>emaArr[i], yScale, slotW, '#39FF14'); }
+
+  // ---- RSI pane ----
+  document.getElementById('rsiPane').style.display = state.indicators.rsi? 'block':'none';
+  if(state.indicators.rsi){
+    const r = resizeCanvas(rsiCanvas, 90);
+    r.ctx.clearRect(0,0,r.w,r.h);
+    const yR = v => r.h - (v/100)*r.h;
+    r.ctx.strokeStyle='rgba(255,77,94,0.35)'; r.ctx.setLineDash([4,3]);
+    r.ctx.beginPath(); r.ctx.moveTo(0,yR(70)); r.ctx.lineTo(r.w,yR(70)); r.ctx.stroke();
+    r.ctx.strokeStyle='rgba(31,184,143,0.35)';
+    r.ctx.beginPath(); r.ctx.moveTo(0,yR(30)); r.ctx.lineTo(r.w,yR(30)); r.ctx.stroke();
+    r.ctx.setLineDash([]);
+    r.ctx.fillStyle='rgba(143,162,189,0.55)'; r.ctx.font='9px IBM Plex Mono, monospace';
+    r.ctx.fillText('70', 2, yR(70)-2); r.ctx.fillText('30', 2, yR(30)-2);
+    drawLine(r.ctx, visible, offset, i=>rsiArr[i], yR, slotW, '#F5C518');
+  }
+
+  // ---- MACD pane ----
+  document.getElementById('macdPane').style.display = state.indicators.macd? 'block':'none';
+  if(state.indicators.macd){
+    const mvals = [];
+    for(let i=offset;i<candles.length;i++){ if(macdLine[i]!=null) mvals.push(macdLine[i]); if(hist[i]!=null) mvals.push(hist[i]); }
+    let mMax = Math.max(...mvals,0.0001), mMin = Math.min(...mvals,-0.0001);
+    const mpad = (mMax-mMin)*0.15;
+    mMax+=mpad; mMin-=mpad;
+    const m = resizeCanvas(macdCanvas, 90);
+    m.ctx.clearRect(0,0,m.w,m.h);
+    const yM = v => m.h - ((v-mMin)/(mMax-mMin))*m.h;
+    m.ctx.strokeStyle='rgba(143,162,189,0.25)';
+    m.ctx.beginPath(); m.ctx.moveTo(0,yM(0)); m.ctx.lineTo(m.w,yM(0)); m.ctx.stroke();
+    visible.forEach((c,idx)=>{
+      const gi = offset+idx;
+      if(hist[gi]==null) return;
+      const x = idx*slotW + slotW/2;
+      const barTop = Math.min(yM(0), yM(hist[gi]));
+      const barH = Math.abs(yM(hist[gi])-yM(0));
+      m.ctx.fillStyle = hist[gi]>=0? 'rgba(31,184,143,0.6)':'rgba(255,77,94,0.6)';
+      m.ctx.fillRect(x-candleW/2, barTop, candleW, Math.max(1,barH));
+    });
+    drawLine(m.ctx, visible, offset, i=>macdLine[i], yM, slotW, '#F5C518');
+    drawLine(m.ctx, visible, offset, i=>signal[i], yM, slotW, '#39FF14');
+  }
+}
+
+function drawLine(ctx, visible, offset, valueFn, yScale, slotW, color){
+  ctx.strokeStyle = color; ctx.lineWidth=1.6; ctx.beginPath();
+  let started=false;
+  visible.forEach((c,idx)=>{
+    const gi = offset+idx;
+    const v = valueFn(gi);
+    if(v==null){ started=false; return; }
+    const x = idx*slotW + slotW/2;
+    const y = yScale(v);
+    if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+/* =========================================================
+   6. HEADER / TICKER / SIDEBAR RENDER
+========================================================= */
+function renderInstrumentList(){
+  const list = document.getElementById('instrumentList');
+  list.innerHTML='';
+  INSTRUMENTS.filter(i=>i.cat===state.cat).forEach(inst=>{
+    const c = state.candles[inst.sym];
+    const last = c[c.length-1].c, prev = c[c.length-2]? c[c.length-2].c : last;
+    const chg = last-prev;
+    const div = document.createElement('div');
+    div.className = 'instrument'+(inst.sym===state.activeSymbol?' active':'');
+    div.innerHTML = `<div class="inst-row"><span class="inst-sym">${inst.sym}</span><span class="inst-price" style="color:${chg>=0?'var(--mint)':'var(--loss)'}">${last.toFixed(inst.decimals)}</span></div><div class="inst-name">${inst.name}</div>`;
+    div.onclick = ()=>{ state.activeSymbol = inst.sym; renderAll(); };
+    list.appendChild(div);
+  });
+}
+
+function renderHeader(){
+  const inst = INSTRUMENTS.find(i=>i.sym===state.activeSymbol);
+  const c = state.candles[inst.sym];
+  const last = c[c.length-1].c, prev = c[c.length-25]? c[c.length-25].c : c[0].c;
+  const chg = last-prev, chgPct = (chg/prev)*100;
+  document.getElementById('chartTitle').textContent = inst.sym + ' · ' + inst.name;
+  document.getElementById('chartPrice').textContent = last.toFixed(inst.decimals);
+  const chEl = document.getElementById('chartChange');
+  chEl.textContent = (chg>=0?'+':'')+chg.toFixed(inst.decimals)+' ('+(chgPct>=0?'+':'')+chgPct.toFixed(2)+'%)';
+  chEl.style.color = chg>=0? 'var(--mint)':'var(--loss)';
+}
+
+function renderTicker(){
+  const track = document.getElementById('tickerTrack');
+  const items = INSTRUMENTS.concat(INSTRUMENTS).map(inst=>{
+    const c = state.candles[inst.sym];
+    const last = c[c.length-1].c, prev = c[c.length-2]? c[c.length-2].c : last;
+    const up = last>=prev;
+    return `<span class="tick-item"><span class="tick-sym">${inst.sym}</span><span class="${up?'tick-up':'tick-down'}">${last.toFixed(inst.decimals)} ${up?'▲':'▼'}</span></span>`;
+  }).join('');
+  track.innerHTML = items;
+}
+
+/* =========================================================
+   7. INDICATOR TOGGLES + EXPLAINER
+========================================================= */
+function renderIndicatorToggles(){
+  const wrap = document.getElementById('indicatorToggles');
+  wrap.innerHTML='';
+  INDICATOR_DEFS.forEach(def=>{
+    const chip = document.createElement('div');
+    const isOn = def.key==='margin'? false : state.indicators[def.key];
+    chip.className = 'ind-chip'+(isOn?' on':'');
+    if(isOn) chip.style.background = def.color;
+    chip.innerHTML = `<span class="dot" style="background:${def.color}"></span>${def.label}<span class="qmark">?</span>`;
+    if(def.key!=='margin'){
+      chip.onclick = (e)=>{
+        if(e.target.classList.contains('qmark')) return;
+        state.indicators[def.key] = !state.indicators[def.key];
+        renderIndicatorToggles(); drawChart();
+      };
+    } else {
+      chip.style.cursor='pointer';
+      chip.onclick = ()=> showExplainer(def);
+    }
+    chip.querySelector('.qmark').onclick = (e)=>{ e.stopPropagation(); showExplainer(def); };
+    wrap.appendChild(chip);
+  });
+}
+function showExplainer(def){
+  const box = document.getElementById('explainerBox');
+  document.getElementById('explainerTitle').textContent = def.title;
+  document.getElementById('explainerBody').textContent = def.body;
+  box.classList.add('show');
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* =========================================================
+   8. ORDER TICKET / MARGIN LOGIC
+========================================================= */
+function currentInstForOrderMode(){
+  // order ticket instrument follows active chart symbol if category matches, else first of that category
+  const inst = INSTRUMENTS.find(i=>i.sym===state.activeSymbol);
+  if(inst.cat===state.orderMode) return inst;
+  return INSTRUMENTS.find(i=>i.cat===state.orderMode);
+}
+
+function computeMargin(){
+  const inst = currentInstForOrderMode();
+  const price = state.candles[inst.sym][state.candles[inst.sym].length-1].c;
+  const size = parseFloat(document.getElementById('sizeInput').value)||0;
+
+  if(state.orderMode==='forex'){
+    const leverage = parseFloat(document.getElementById('leverageSelect').value);
+    const notional = size*inst.contractSize*price;
+    const marginReq = notional/leverage;
+    return {inst, price, size, notional, marginReq, unitLabel:'lots', detail:`${size} lot × ${inst.contractSize.toLocaleString()} units × ${price.toFixed(inst.decimals)} @ ${leverage}:1`};
+  }
+  if(state.orderMode==='stock'){
+    const pct = parseFloat(document.getElementById('marginPctSelect').value);
+    const notional = size*price;
+    const marginReq = notional*pct;
+    return {inst, price, size, notional, marginReq, unitLabel:'shares', detail:`${size} sh × ${price.toFixed(2)} × ${(pct*100).toFixed(0)}% margin`};
+  }
+  // futures
+  const notional = size*price*inst.multiplier;
+  const marginReq = size*inst.demoMargin;
+  return {inst, price, size, notional, marginReq, unitLabel:'contracts', detail:`${size} contract × $${inst.demoMargin} demo initial margin`};
+}
+
+function renderMarginCalc(){
+  const m = computeMargin();
+  const acct = accountSummary();
+  const box = document.getElementById('marginCalc');
+  box.innerHTML = `
+    <div class="row"><span>Notional value</span><b>${money(m.notional)}</b></div>
+    <div class="row"><span>Calc</span><b style="font-weight:400;color:var(--ink-dim)">${m.detail}</b></div>
+    <div class="row total"><span>Margin required</span><b>${money(m.marginReq)}</b></div>
+    <div class="row"><span>Free margin after</span><b style="color:${(acct.freeMargin-m.marginReq)<0?'var(--loss)':'var(--ink)'}">${money(acct.freeMargin-m.marginReq)}</b></div>
+  `;
+  const submitBtn = document.getElementById('submitOrder');
+  submitBtn.disabled = m.marginReq > acct.freeMargin || m.size<=0;
+}
+
+function accountSummary(){
+  let floatingPL = 0, usedMargin = 0;
+  state.account.positions.forEach(p=>{
+    const inst = INSTRUMENTS.find(i=>i.sym===p.symbol);
+    const price = state.candles[inst.sym][state.candles[inst.sym].length-1].c;
+    floatingPL += positionPL(p, price);
+    usedMargin += p.marginUsed;
+  });
+  const equity = state.account.balance + floatingPL;
+  const freeMargin = equity - usedMargin;
+  const marginLevel = usedMargin>0 ? (equity/usedMargin*100) : null;
+  return {balance: state.account.balance, equity, usedMargin, freeMargin, marginLevel, floatingPL};
+}
+
+function positionPL(p, currentPrice){
+  const inst = INSTRUMENTS.find(i=>i.sym===p.symbol);
+  const dir = p.side==='buy'? 1 : -1;
+  if(inst.cat==='forex'){
+    return (currentPrice-p.entryPrice)*dir*p.size*inst.contractSize / (inst.jpy? currentPrice : 1);
+  }
+  if(inst.cat==='stock'){
+    return (currentPrice-p.entryPrice)*dir*p.size;
+  }
+  return (currentPrice-p.entryPrice)*dir*p.size*inst.multiplier;
+}
+
+function renderAccount(){
+  const s = accountSummary();
+  document.getElementById('acctEquity').textContent = money(s.equity);
+  document.getElementById('acctBalance').textContent = money(s.balance);
+  document.getElementById('acctUsedMargin').textContent = money(s.usedMargin);
+  document.getElementById('acctFreeMargin').textContent = money(s.freeMargin);
+  const mlEl = document.getElementById('acctMarginLevel');
+  const fill = document.getElementById('marginBarFill');
+  const warnSlot = document.getElementById('warnSlot');
+  if(s.marginLevel==null){
+    mlEl.textContent='—'; fill.style.width='0%'; warnSlot.innerHTML='';
+  } else {
+    mlEl.textContent = s.marginLevel.toFixed(0)+'%';
+    const pct = Math.min(100, s.marginLevel);
+    fill.style.width = pct+'%';
+    if(s.marginLevel<100){
+      fill.style.background='var(--loss)';
+      warnSlot.innerHTML = `<div class="warn-banner">⚠ MARGIN CALL — equity has fallen below 100% of used margin. Add funds or close positions, or the platform will start closing them for you.</div>`;
+    } else if(s.marginLevel<150){
+      fill.style.background='var(--gold)'; warnSlot.innerHTML='';
+    } else {
+      fill.style.background='var(--mint)'; warnSlot.innerHTML='';
+    }
+    if(s.marginLevel<50){
+      stopOutWeakestPosition();
+    }
+  }
+  renderPositions(s);
+}
+
+function stopOutWeakestPosition(){
+  if(state.account.positions.length===0) return;
+  let worst=null, worstPL=Infinity;
+  state.account.positions.forEach(p=>{
+    const inst = INSTRUMENTS.find(i=>i.sym===p.symbol);
+    const price = state.candles[inst.sym][state.candles[inst.sym].length-1].c;
+    const pl = positionPL(p, price);
+    if(pl<worstPL){ worstPL=pl; worst=p; }
+  });
+  if(worst){
+    closePosition(worst.id, true);
+  }
+}
+
+function renderPositions(summary){
+  const list = document.getElementById('positionsList');
+  if(state.account.positions.length===0){
+    list.innerHTML = '<div class="empty-pos">No open positions yet.<br>Place an order to get started.</div>';
+    return;
+  }
+  list.innerHTML='';
+  state.account.positions.forEach(p=>{
+    const inst = INSTRUMENTS.find(i=>i.sym===p.symbol);
+    const price = state.candles[inst.sym][state.candles[inst.sym].length-1].c;
+    const pl = positionPL(p, price);
+    const card = document.createElement('div');
+    card.className='pos-card';
+    card.innerHTML = `
+      <div class="pos-top"><span>${p.symbol} · ${p.side.toUpperCase()}</span><span class="pos-pl" style="color:${pl>=0?'var(--mint)':'var(--loss)'}">${money(pl)}</span></div>
+      <div class="pos-mid"><span>${p.size} ${p.sizeLabel} @ ${p.entryPrice.toFixed(inst.decimals)}</span><span>now ${price.toFixed(inst.decimals)}</span></div>
+      <div class="pos-mid"><span>margin ${money(p.marginUsed)}</span><span>${p.leverageLabel||''}</span></div>
+      <button class="close-btn" data-id="${p.id}">Close position</button>
+    `;
+    card.querySelector('.close-btn').onclick = ()=> closePosition(p.id);
+    list.appendChild(card);
+  });
+}
+
+function closePosition(id, forced=false){
+  const idx = state.account.positions.findIndex(p=>p.id===id);
+  if(idx===-1) return;
+  const p = state.account.positions[idx];
+  const inst = INSTRUMENTS.find(i=>i.sym===p.symbol);
+  const price = state.candles[inst.sym][state.candles[inst.sym].length-1].c;
+  const pl = positionPL(p, price);
+  state.account.balance += pl + p.marginUsed;
+  state.account.positions.splice(idx,1);
+  if(forced){
+    document.getElementById('orderMsg').innerHTML = `<div class="msg err">Stop-out triggered: ${p.symbol} closed automatically at ${money(pl)} to protect the account.</div>`;
+  }
+  renderAccount();
+}
+
+function submitOrder(){
+  const m = computeMargin();
+  const summary = accountSummary();
+  if(m.size<=0){ return; }
+  if(m.marginReq > summary.freeMargin){
+    document.getElementById('orderMsg').innerHTML = `<div class="msg err">Not enough free margin. Need ${money(m.marginReq)}, have ${money(summary.freeMargin)}.</div>`;
+    return;
+  }
+  const id = 'p'+Date.now()+Math.random().toString(36).slice(2,6);
+  state.account.positions.push({
+    id, symbol:m.inst.sym, side:state.side, size:m.size, sizeLabel:m.unitLabel,
+    entryPrice:m.price, marginUsed:m.marginReq,
+    leverageLabel: state.orderMode==='forex'? document.getElementById('leverageSelect').value+':1' : (state.orderMode==='stock'? (document.getElementById('marginPctSelect').value*100)+'% margin' : 'fixed margin')
+  });
+  document.getElementById('orderMsg').innerHTML = `<div class="msg ok">Opened ${state.side.toUpperCase()} ${m.size} ${m.unitLabel} of ${m.inst.sym} at ${m.price.toFixed(m.inst.decimals)}.</div>`;
+  renderAccount();
+  renderMarginCalc();
+}
+
+/* =========================================================
+   9. UI WIRING
+========================================================= */
+document.querySelectorAll('.cat-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.cat = btn.dataset.cat;
+    state.activeSymbol = INSTRUMENTS.find(i=>i.cat===state.cat).sym;
+    renderInstrumentList(); renderHeader(); drawChart();
+  };
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.speed = parseInt(btn.dataset.speed);
+  };
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.orderMode = btn.dataset.mode;
+    document.getElementById('leverageField').style.display = state.orderMode==='forex'?'block':'none';
+    document.getElementById('marginPctField').style.display = state.orderMode==='stock'?'block':'none';
+    document.getElementById('sizeLabel').textContent = state.orderMode==='forex'?'Size (lots)': state.orderMode==='stock'?'Size (shares)':'Size (contracts)';
+    document.getElementById('sizeInput').value = state.orderMode==='forex'?'0.10': state.orderMode==='stock'?'10':'1';
+    document.getElementById('sizeInput').step = state.orderMode==='forex'?'0.01':'1';
+    renderMarginCalc();
+  };
+});
+
+document.getElementById('buyBtn').onclick = ()=>{
+  state.side='buy';
+  document.getElementById('buyBtn').classList.add('active');
+  document.getElementById('sellBtn').classList.remove('active');
+  const btn=document.getElementById('submitOrder'); btn.className='submit-btn buy'; btn.textContent='Open position (Buy)';
+};
+document.getElementById('sellBtn').onclick = ()=>{
+  state.side='sell';
+  document.getElementById('sellBtn').classList.add('active');
+  document.getElementById('buyBtn').classList.remove('active');
+  const btn=document.getElementById('submitOrder'); btn.className='submit-btn sell'; btn.textContent='Open position (Sell)';
+};
+
+document.getElementById('sizeInput').oninput = renderMarginCalc;
+document.getElementById('leverageSelect').onchange = renderMarginCalc;
+document.getElementById('marginPctSelect').onchange = renderMarginCalc;
+document.getElementById('submitOrder').onclick = submitOrder;
+document.getElementById('resetBtn').onclick = ()=>{
+  state.account = {balance:10000, positions:[]};
+  document.getElementById('orderMsg').innerHTML='';
+  renderAccount(); renderMarginCalc();
+};
+
+window.addEventListener('resize', drawChart);
+
+/* =========================================================
+   10. MAIN LOOP
+========================================================= */
+function renderAll(){
+  renderInstrumentList();
+  renderHeader();
+  renderIndicatorToggles();
+  drawChart();
+  renderAccount();
+  renderMarginCalc();
+  renderTicker();
+}
+
+function tick(){
+  for(let s=0;s<state.speed;s++){
+    state.tickCount++;
+    INSTRUMENTS.forEach(inst=>tickInstrument(inst));
+    if(state.tickCount % 8 === 0){
+      INSTRUMENTS.forEach(inst=>closeCandleAndOpenNew(inst));
+    }
+  }
+  renderHeader();
+  renderInstrumentList();
+  drawChart();
+  renderAccount();
+  renderMarginCalc();
+  renderTicker();
+}
+
+function updateClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+}
+setInterval(updateClock, 1000);
+setInterval(tick, 1000);
+
+renderAll();
+</script>
+</body>
+</html>
